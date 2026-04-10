@@ -29,6 +29,19 @@ var game = new Phaser.Game(config);
 
 function preload ()
 {
+  // overload console.log so we can print in python server
+  const oldLog = console.log;
+  console.log = function(...args) {
+    // send log data to python
+    fetch('/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(args)
+    });
+    // but still send it to the console log
+    oldLog.apply(console, args);
+  };
+
   this.load.image('sky', 'assets/sky.png');
   this.load.image('ground', 'assets/platform.png');
   this.load.image('star', 'assets/star.png');
@@ -38,7 +51,8 @@ function preload ()
 
 function create ()
 {
-  console.log("cowabunga");
+  let x = 5;
+  console.log("cowabunga", x);
   //  A simple background for our game
   this.add.image(400, 300, 'sky');
 
