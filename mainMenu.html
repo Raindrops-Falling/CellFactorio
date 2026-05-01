@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>Main Menu</title>
+    <link rel='stylesheet' href='main.css'>
+</head>
+<body>
+    <script>
+        class MenuScene extends Phaser.Scene{
+            constructor() {
+                super ("MenuScene")
+            }
+            create(){
+                this.cameras.main.setBackgroundColor("#0000FF")
+                this.add.text(400,120, "CELL GAME",
+                    {
+                        fontSize: "80px",
+                        color: "#ffffff"
+                    }
+                )
+            }
+        }
+    </script>
+</body>
+</html>
