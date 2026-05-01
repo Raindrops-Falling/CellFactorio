@@ -23,15 +23,15 @@
                 const startBtn = this.createButton(400, 280, "Start Game", () => {
                     console.log("The game has been started")
                 });
-                const saveBtn = this.createButton(400,360, "Save the Game", ()=> {\
+                const saveBtn = this.createButton(400,360, "Save the Game", ()=> {
                     console.log("This game has been saved")
                 });
             }
             createButton(x, y, text, callback) {
                 const btn =this.add.text(x, y, text, {
                     fontSize: "40px",
-                    backgroundClolor = "#000",
-                    color: "#fff",
+                    backgroundColor : "#000",
+                    color: "#FFFF00",
                     padding: { x: 20, y:10}
 
                 }).setOrigin(0,5);
