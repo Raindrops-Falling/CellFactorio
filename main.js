@@ -51,7 +51,39 @@ class MenuScene extends Phaser.Scene {
         titleText.y = 120 + 10 * Math.sin(uptime / 50);
     }
 }
+class GameScene extends Phaser.Scene {
+    constructor(){
+        super("GameScene")
+    }
 
+    init(data){
+        this.loaded=data?.loaded || false;
+    }
+
+    create(){
+        this.cameras.main.setBackgroundColor("#FFFFFF");
+
+        this.add.text(400,80,
+            this.loaded ? "LOADED GAME": "NEW GAME",
+            {fontSize: "40px", color: "#000000"}
+        ).setOrigin(0.5);
+
+        this.player=this.add.circle(400,400,20, 0x00ff00);
+
+        this.cursors=this.input.keyboard.createCursorKeys();
+
+        this.saveBtn=this.add.text(100,500, "SAVE", {
+            fontSize: "30px",
+            backgroundColor:"#000",
+            color:"#00ff00",
+            padding: {x:10, y:5}
+        }).setInteractive({useHandCursor:true});
+
+        this.saveBtn.on("pointerdown", ()=>{
+            localStorage.setItem("cellGameSave", JSON.stringify)
+        })
+    }
+}
 
 const config = {
     type: Phaser.AUTO,
