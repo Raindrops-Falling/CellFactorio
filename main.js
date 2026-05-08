@@ -11,13 +11,15 @@ console.log = function(...args) {
     oldLog.apply(console, args);
 };
 
+let titleText = null;
+let uptime = 0;
 class MenuScene extends Phaser.Scene {
     constructor() {
         super("MenuScene");
     }
     create() {
         this.cameras.main.setBackgroundColor("#0000FF");
-        this.add.text(400, 120, "CELL GAME", {
+        titleText = this.add.text(400, 120, "CELL GAME", {
             fontSize: "80px",
             color: "#FFFF00"
         }).setOrigin(0.5);
@@ -43,7 +45,13 @@ class MenuScene extends Phaser.Scene {
 
         return btn;
     }
+
+    update() {
+        uptime++;
+        titleText.y = 120 + 10 * Math.sin(uptime / 50);
+    }
 }
+
 
 const config = {
     type: Phaser.AUTO,
