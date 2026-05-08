@@ -80,8 +80,12 @@ class GameScene extends Phaser.Scene {
         }).setInteractive({useHandCursor:true});
 
         this.saveBtn.on("pointerdown", ()=>{
-            localStorage.setItem("cellGameSave", JSON.stringify)
-        })
+            localStorage.setItem("cellGameSave", JSON.stringify({
+                x: this.player.x,
+                y:this.player.y
+            }));
+            console.log("Saved");
+})
     }
 }
 
