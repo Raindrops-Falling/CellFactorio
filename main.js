@@ -2,19 +2,16 @@
 const oldLog = console.log;
 
 console.log = function (...args) {
-    // send log data to python
     fetch('/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(args)
+    }).catch(err => {
+        oldLog("Failed to send log:", err);
     });
 
-    // still print in browser console
     oldLog.apply(console, args);
 };
-
-let titleText = null;
-let uptime = 0;
 
 class MenuScene extends Phaser.Scene {
     constructor() {
@@ -22,15 +19,55 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        this.cameras.main.setBackgroundColor("#0000FF");
+        this.uptime = 0;
 
-        titleText = this.add.text(400, 120, "CELL GAME", {
-            fontSize: "80px",
-            color: "#FFFF00"
+        this.cameras.main.setBackgroundColor("#07192f");
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
+
+        this.panel = this.add.rectangle(centerX, centerY, this.scale.width - 80, this.scale.height - 160, 0x081f42, 0.92).setStrokeStyle(2, 0x58e0ff);
+        //this.titlePanel = this.add.rectangle(centerX, centerY - 210, 560, 140, 0x123b66, 0.75).setStrokeStyle(1, 0xffffff, 0.4);
+
+        this.titleText = this.add.text(centerX, centerY - 220, "CELL FACTORIO", {
+            fontSize: "72px",
+            color: "#a6f6ff",
+            fontStyle: "bold",
+            stroke: "#0c2744",
+            strokeThickness: 5,
+            shadow: { offsetX: 2, offsetY: 2, color: "#000000", blur: 4, fill: true }
         }).setOrigin(0.5);
 
+        this.titleBaseY = centerY - 220;
+        this.subtitleText = this.add.text(
+            centerX,
+            centerY - 160,
+            "Move the cell with your mouse and save your progress.",
+            {
+                fontSize: "22px",
+                color: "#d0ebff",
+                align: "center",
+                wordWrap: { width: 560 }
+            }
+        ).setOrigin(0.5);
+
+        this.glowPulse = this.add.circle(centerX, centerY - 210, 110, 0x55d6ff, 0.12);
+        this.tweens.add({
+            targets: this.glowPulse,
+            scale: 1.08,
+            alpha: 0.18,
+            duration: 1800,
+            ease: "Sine.easeInOut",
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.createFloatingOrb(120, 220, 0x6cebff, 8, 0);
+        this.createFloatingOrb(700, 260, 0xffc86e, 10, 300);
+        this.createFloatingOrb(240, 400, 0x8de9a3, 8, 600);
+        this.createFloatingOrb(560, 360, 0xff8cc5, 10, 900);
+
         // START GAME BUTTON
-        this.createButton(400, 280, "Start Game", () => {
+        this.startBtn = this.createButton(centerX, centerY - 20, "Start Game", () => {
             console.log("The game has been started");
 
             this.scene.start("GameScene", {
@@ -39,7 +76,7 @@ class MenuScene extends Phaser.Scene {
         });
 
         // LOAD GAME BUTTON
-        this.createButton(400, 360, "Load the Game", () => {
+        this.loadBtn = this.createButton(centerX, centerY + 60, "Load the Game", () => {
             const saveData = localStorage.getItem("cellGameSave");
 
             if (saveData) {
@@ -53,35 +90,94 @@ class MenuScene extends Phaser.Scene {
                 console.log("No save file found");
             }
         });
+
+        this.scale.on('resize', this.updateLayout, this);
+    }
+
+    updateLayout(gameSize) {
+        const width = gameSize?.width || this.scale.width;
+        const height = gameSize?.height || this.scale.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        if (this.panel) {
+            this.panel.setPosition(centerX, centerY).setSize(width - 80, height - 160);
+        }
+        if (this.titlePanel) {
+            this.titlePanel.setPosition(centerX, centerY - 210);
+        }
+        if (this.titleText) {
+            this.titleText.setPosition(centerX, this.titleBaseY);
+        }
+        if (this.subtitleText) {
+            this.subtitleText.setPosition(centerX, centerY - 160);
+        }
+        if (this.glowPulse) {
+            this.glowPulse.setPosition(centerX, centerY - 210);
+        }
+        if (this.startBtn) {
+            this.startBtn.setPosition(centerX, centerY - 20);
+        }
+        if (this.loadBtn) {
+            this.loadBtn.setPosition(centerX, centerY + 60);
+        }
+    }
+
+    createFloatingOrb(x, y, color, radius, delay) {
+        const orb = this.add.circle(x, y, radius, color, 0.18);
+        this.tweens.add({
+            targets: orb,
+            x: x + Phaser.Math.Between(-24, 24),
+            y: y + Phaser.Math.Between(-30, 30),
+            duration: 3000 + Phaser.Math.Between(0, 1200),
+            ease: "Sine.easeInOut",
+            yoyo: true,
+            repeat: -1,
+            delay
+        });
+        return orb;
     }
 
     createButton(x, y, text, callback) {
         const btn = this.add.text(x, y, text, {
             fontSize: "40px",
-            backgroundColor: "#000",
-            color: "#FFFF00",
-            padding: { x: 20, y: 10 }
+            backgroundColor: "#194e8f",
+            color: "#ffffff",
+            padding: { x: 24, y: 14 },
+            stroke: "#45d6ff",
+            strokeThickness: 2,
+            shadow: { offsetX: 2, offsetY: 2, color: "#000000", blur: 4, fill: true }
         }).setOrigin(0.5);
 
         btn.setInteractive({ useHandCursor: true });
 
-        btn.on('pointerdown', callback);
+        btn.on('pointerdown', () => {
+            this.tweens.add({
+                targets: btn,
+                scale: 0.95,
+                duration: 80,
+                yoyo: true
+            });
+            callback();
+        });
 
         btn.on('pointerover', () => {
-            btn.setStyle({ backgroundColor: "#333" });
+            btn.setStyle({ backgroundColor: "#3377c1", color: "#f8ffea" });
+            btn.setScale(1.08);
         });
 
         btn.on('pointerout', () => {
-            btn.setStyle({ backgroundColor: "#000" });
+            btn.setStyle({ backgroundColor: "#194e8f", color: "#ffffff" });
+            btn.setScale(1);
         });
 
         return btn;
     }
 
     update() {
-        uptime++;
+        this.uptime++;
 
-        titleText.y = 120 + 10 * Math.sin(uptime / 50);
+        this.titleText.y = 120 + 10 * Math.sin(this.uptime / 50);
     }
 }
 
@@ -97,9 +193,11 @@ class GameScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.setBackgroundColor("#FFFFFF");
+        const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
 
-        this.add.text(
-            400,
+        this.gameTitle = this.add.text(
+            centerX,
             80,
             this.loaded ? "LOADED GAME" : "NEW GAME",
             {
@@ -109,10 +207,10 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         // PLAYER POSITION
-        let startX = 400;
-        let startY = 400;
+        let startX = centerX;
+        let startY = centerY;
 
-        // if loaded save exists
+        // LOAD SAVE DATA
         if (this.saveData) {
             startX = this.saveData.x;
             startY = this.saveData.y;
@@ -121,18 +219,37 @@ class GameScene extends Phaser.Scene {
         // PLAYER
         this.player = this.add.circle(startX, startY, 20, 0x00ff00);
 
-        // KEYBOARD INPUT
-        this.cursors = this.input.keyboard.createCursorKeys();
+        // TARGET POSITION
+        this.targetX = startX;
+        this.targetY = startY;
+
+        // MOUSE MOVEMENT
+        this.input.on("pointermove", (pointer) => {
+            const margin = 40;
+            const minX = margin;
+            const maxX = this.scale.width - margin;
+            const minY = margin;
+            const maxY = this.scale.height - margin;
+
+            this.targetX = Phaser.Math.Clamp(pointer.x, minX+100, maxX-100);
+            this.targetY = Phaser.Math.Clamp(pointer.y, minY+100, maxY-100);
+        });
 
         // SAVE BUTTON
-        this.saveBtn = this.add.text(100, 500, "SAVE", {
+        this.saveBtn = this.add.text(100, this.scale.height - 50, "SAVE", {
             fontSize: "30px",
             backgroundColor: "#000",
             color: "#00ff00",
             padding: { x: 10, y: 5 }
-        });
+        }).setOrigin(0.5);
 
         this.saveBtn.setInteractive({ useHandCursor: true });
+
+        // SAVE MESSAGE
+        this.savedText = this.add.text(centerX, this.scale.height - 50, "", {
+            fontSize: "24px",
+            color: "#008800"
+        }).setOrigin(0.5);
 
         this.saveBtn.on("pointerdown", () => {
             localStorage.setItem("cellGameSave", JSON.stringify({
@@ -141,10 +258,16 @@ class GameScene extends Phaser.Scene {
             }));
 
             console.log("Game Saved");
+
+            this.savedText.setText("GAME SAVED");
+
+            this.time.delayedCall(1500, () => {
+                this.savedText.setText("");
+            });
         });
 
         // MENU BUTTON
-        this.menuBtn = this.add.text(700, 500, "MENU", {
+        this.menuBtn = this.add.text(this.scale.width - 100, this.scale.height - 50, "MENU", {
             fontSize: "30px",
             backgroundColor: "#000",
             color: "#ff0000",
@@ -156,33 +279,78 @@ class GameScene extends Phaser.Scene {
         this.menuBtn.on("pointerdown", () => {
             this.scene.start("MenuScene");
         });
+
+        // PLAYER LABEL
+        this.playerLabel = this.add.text(
+            this.player.x,
+            this.player.y - 40,
+            "PLAYER",
+            {
+                fontSize: "20px",
+                color: "#000000"
+            }
+        ).setOrigin(0.5);
+
+        this.scale.on('resize', this.updateLayout, this);
+    }
+
+    updateLayout(gameSize) {
+        const width = gameSize?.width || this.scale.width;
+        const height = gameSize?.height || this.scale.height;
+        const centerX = width / 2;
+
+        if (this.gameTitle) {
+            this.gameTitle.setPosition(centerX, 80);
+        }
+        if (this.saveBtn) {
+            this.saveBtn.setPosition(100, height - 50);
+        }
+        if (this.menuBtn) {
+            this.menuBtn.setPosition(width - 100, height - 50);
+        }
+        if (this.savedText) {
+            this.savedText.setPosition(centerX, height - 50);
+        }
     }
 
     update() {
-        const speed = 4;
+        // SMOOTH MOVEMENT
+        this.player.x = Phaser.Math.Linear(
+            this.player.x,
+            this.targetX,
+            0.08
+        );
 
-        if (this.cursors.left.isDown) {
-            this.player.x -= speed;
-        }
+        this.player.y = Phaser.Math.Linear(
+            this.player.y,
+            this.targetY,
+            0.08
+        );
 
-        if (this.cursors.right.isDown) {
-            this.player.x += speed;
-        }
+        // KEEP PLAYER INSIDE SCREEN
+        const margin = 20;
+        const maxX = this.scale.width - margin;
+        const maxY = this.scale.height - margin;
 
-        if (this.cursors.up.isDown) {
-            this.player.y -= speed;
-        }
+        this.player.x = Phaser.Math.Clamp(this.player.x, margin, maxX);
+        this.player.y = Phaser.Math.Clamp(this.player.y, margin, maxY);
 
-        if (this.cursors.down.isDown) {
-            this.player.y += speed;
-        }
+        // UPDATE LABEL POSITION
+        this.playerLabel.x = this.player.x;
+        this.playerLabel.y = this.player.y - 40;
     }
 }
 
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    parent: 'game-container',
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 800,
+        height: 600
+    },
+    backgroundColor: "#000000",
     scene: [MenuScene, GameScene]
 };
 
